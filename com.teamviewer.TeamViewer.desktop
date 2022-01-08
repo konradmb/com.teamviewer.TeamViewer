@@ -1,0 +1,8 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Categories=Network;
+Name=TeamViewer
+Comment=Remote control and meeting solution.
+Exec=teamviewer.sh
+Icon=com.teamviewer.TeamViewer

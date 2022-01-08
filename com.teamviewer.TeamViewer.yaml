@@ -1,0 +1,75 @@
+app-id: com.teamviewer.TeamViewer
+runtime: org.kde.Platform
+runtime-version: "5.15-21.08"
+sdk: org.kde.Sdk
+
+command: teamviewer.sh
+
+tags:
+  - proprietary
+
+finish-args:
+  - --share=ipc
+  - --socket=x11
+  - --socket=wayland
+  - --device=dri
+  - --socket=pulseaudio
+  - --share=network
+
+modules:
+  - name: minizip
+    subdir: contrib/minizip
+    config-opts:
+      - "--disable-static"
+    sources:
+      - type: archive
+        url: "https://zlib.net/zlib-1.2.11.tar.gz"
+        sha256: c3e5e9fdd5004dcb542feda5ee4f0ff0744628baf8ed2dd5d66f8ca1197cb1a1
+        x-checker-data:
+          type: anitya
+          project-id: 5303
+          stable-only: true
+          url-template: "https://zlib.net/zlib-$version.tar.gz"
+      - type: shell
+        commands:
+          - "GLOBIGNORE=contrib && rm -rf *"
+          - "GLOBIGNORE=contrib/minizip && rm -rf contrib/*"
+          - rm -f contrib/minizip/Makefile
+          - autoreconf -fiv contrib/minizip
+    cleanup:
+      - "*.la"
+
+  - name: teamviewer
+    buildsystem: simple
+    sources:
+      - type: extra-data
+        filename: teamviewer.tar.xz
+        only-arches:
+          - x86_64
+        url: https://dl.teamviewer.com/download/linux/version_15x/teamviewer_15.25.5_amd64.tar.xz
+        sha256: 10d5ebfe8cf2b676befcf362acbd0c39c51575bfe5eff7ee6d9cdfd408a06486
+        size: 61168944
+        x-checker-data:
+          type: rotating-url
+          url: https://download.teamviewer.com/download/linux/teamviewer_amd64.tar.xz
+          pattern: https://dl.teamviewer.com/download/linux/version_.*/teamviewer_([0-9.]+)_amd64.tar.xz
+      - type: script
+        dest-filename: apply_extra
+        commands:
+          - tar --strip-components=1 -xf  teamviewer.tar.xz
+          - rm -f teamviewer.tar.xz
+          - sed -i $'s/TV_PKGTYPE=\'TAR_NI\'/TV_PKGTYPE=\'TAR_IN\'/' /app/extra/tv_bin/script/tvw_config
+      - type: script
+        dest-filename: teamviewer.sh
+        commands:
+          # - flatpak-spawn 
+          - exec /app/extra/teamviewer "$@"
+      - type: file
+        path: teamviewer_256.png
+      - type: file
+        path: com.teamviewer.TeamViewer.desktop
+    build-commands:
+      - install -D teamviewer_256.png /app/share/icons/hicolor/256x256/apps/com.teamviewer.TeamViewer.png
+      - install -D com.teamviewer.TeamViewer.desktop /app/share/applications/com.teamviewer.TeamViewer.desktop
+      - install -D apply_extra /app/bin/apply_extra
+      - install -D teamviewer.sh /app/bin/teamviewer.sh
